@@ -1,5 +1,6 @@
 val scala212 = "2.12.18"
-val scala213 = "2.13.18"
+val scala213 =
+  "2.13.16" // newest 2.13 with a scoverage 2.3.0 build; binary compatible with later 2.13 (portal uses 2.13.18)
 
 // play-json line per Play version: the artifact is named stash-scala-client_playjson<suffix>.
 val play27 = "2.7.4" // Play 2.7 -> _playjson27 (the only artifact published until now)
