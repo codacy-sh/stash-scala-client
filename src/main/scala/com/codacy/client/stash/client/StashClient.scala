@@ -71,6 +71,19 @@ class StashClient(apiUrl: String, authenticator: Option[Authenticator] = None, a
     }
   }
 
+  /*
+   * Does an API request and returns the body as text, for the resources that aren't json: raw diffs and file contents
+   */
+  def executeText(
+      requestUrl: String
+  )(params: Map[String, String] = Map.empty, accept: String = "text/plain"): RequestResponse[String] = {
+    doRequest[String](requestUrl, "GET", params, None, headers = Seq("Accept" -> accept)) match {
+      case Right((HTTPStatusCodes.OK, body)) => RequestResponse(Some(body))
+      case Right((statusCode, body)) => getError[String](statusCode, statusCode.toString, body)
+      case Left(error) => error
+    }
+  }
+
   def postJson[T](request: Request[T], values: JsValue)(implicit reader: Reads[T]): RequestResponse[T] = {
     performRequest("POST", request, values)
   }
@@ -141,12 +154,13 @@ class StashClient(apiUrl: String, authenticator: Option[Authenticator] = None, a
       requestPath: String,
       method: String,
       params: Map[String, String] = Map.empty,
-      payload: Option[JsValue] = None
+      payload: Option[JsValue] = None,
+      headers: Seq[(String, String)] = Seq.empty
   ): Either[RequestResponse[T], (Int, String)] = {
     val url = generateUrl(requestPath)
     logger.info("[StashClient::doRequest] url: " + url)
     try {
-      val baseRequestWithoutCertificatesOption = Http(url).method(method).params(params)
+      val baseRequestWithoutCertificatesOption = Http(url).method(method).params(params).headers(headers)
 
       val baseRequest =
         if (acceptAllCertificates) {
@@ -167,7 +181,7 @@ class StashClient(apiUrl: String, authenticator: Option[Authenticator] = None, a
 
       // if the response code is a redirect, follow it
       if (HTTPStatusCodes.Redirects.all.contains(response.code)) {
-        followRedirect(method, params, payload, response)
+        followRedirect(method, params, payload, headers, response)
       } else {
         Right((response.code, response.body))
       }
@@ -185,6 +199,8 @@ class StashClient(apiUrl: String, authenticator: Option[Authenticator] = None, a
     *   The parameters of the request
     * @param payload
     *   The payload of the request
+    * @param headers
+    *   The headers of the request
     * @param response
     *   The response to extract the new location or to return as default.
     */
@@ -192,13 +208,14 @@ class StashClient(apiUrl: String, authenticator: Option[Authenticator] = None, a
       method: String,
       params: Map[String, String],
       payload: Option[JsValue],
+      headers: Seq[(String, String)],
       response: HttpResponse[String]
   ): Either[RequestResponse[T], (Int, String)] = {
     response.headers.get("Location") match {
       case Some(Vector(newLocation)) =>
         logger.info("[StashClient::followRedirect] newLocation: " + newLocation)
         val newPath = new URL(newLocation).getPath
-        doRequest(newPath, method, params, payload)
+        doRequest(newPath, method, params, payload, headers)
       case _ => Right((response.code, response.body))
     }
   }

@@ -12,18 +12,26 @@ It is in a very early stage and all the contributions are welcome.
 
 ### Import in SBT
 
-```
-"com.codacy" %% "stash-scala-client" % "<VERSION>"
+There's one artifact per Play JSON line:
+
+```scala
+// Scala 2.12, Play 2.7 (play-json 2.7)
+"com.codacy" %% "stash-scala-client_playjson27" % "<VERSION>"
+
+// Scala 2.13, Play 2.9 (play-json 2.10)
+"com.codacy" %% "stash-scala-client_playjson29" % "<VERSION>"
 ```
 
 ### Use in code
 
 ```scala
-val client = new StashClient("baseUrl", "consumerKey", "consumerSecret", "token", "secretToken")
+// OAuth 1.0a (an application link): the consumer key and private key, and the user's access token and secret
+val authenticator = new OAuth1Authenticator("consumerKey", "consumerPrivateKey", "token", "tokenSecret")
+val client = new StashClient("https://bitbucket.example.com", Some(authenticator))
 
 val repoServices = new RepositoryServices(client)
 
-val response = repoServices.getRepositories("projectKey")
+val response = repoServices.getRepositories("projectKey", pageRequest = None)
 ```
 
 ## Creators
