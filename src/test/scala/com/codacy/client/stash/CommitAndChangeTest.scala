@@ -50,6 +50,28 @@ class CommitAndChangeTest extends WordSpec with Matchers {
     }
   }
 
+  "PullRequest" should {
+    "read the newest commit of the source branch" in {
+      val json = Json.parse("""
+        |{
+        |  "id": 7,
+        |  "title": "Feature",
+        |  "state": "OPEN",
+        |  "createdDate": 1548720847608,
+        |  "updatedDate": 1548720847609,
+        |  "fromRef": { "id": "refs/heads/feature", "latestCommit": "babecafe", "repository": { "slug": "repo" } },
+        |  "toRef": { "id": "refs/heads/main", "latestCommit": "deadbeef", "repository": { "slug": "repo" } },
+        |  "author": { "user": { "name": "charlie", "emailAddress": "charlie@example.com", "id": 101,
+        |                        "displayName": "Charlie", "slug": "charlie" } }
+        |}""".stripMargin)
+
+      val pr = json.as[PullRequest]
+      pr.sourceBranch shouldBe "feature"
+      pr.destBranch shouldBe "main"
+      pr.latestCommit shouldBe Some("babecafe")
+    }
+  }
+
   "Change" should {
     "read the paths, before and after a move" in {
       val json = Json.parse("""
