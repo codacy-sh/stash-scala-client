@@ -25,7 +25,7 @@ class WebhooksServices(client: StashClient) {
     val values = Json.obj(
       "name" -> name,
       "url" -> hookCallbakUrl,
-      "events" -> JsArray(events.map(JsString)(collection.breakOut)),
+      "events" -> JsArray(events.map(JsString).toIndexedSeq),
       "configuration" -> Json.obj(),
       "active" -> active
     )
@@ -47,7 +47,7 @@ class WebhooksServices(client: StashClient) {
     val values = Json.obj(
       "name" -> name,
       "url" -> hookCallbakUrl,
-      "events" -> JsArray(events.map(JsString)(collection.breakOut)),
+      "events" -> JsArray(events.map(JsString).toIndexedSeq),
       "configuration" -> Json.obj(),
       "active" -> active
     )

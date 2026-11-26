@@ -39,6 +39,14 @@ class PullRequestServices(client: StashClient) {
   }
 
   /*
+   * Gets a pull request
+   */
+  def getPullRequest(projectKey: String, repository: String, prId: Long): RequestResponse[PullRequest] =
+    client.execute(
+      Request(s"/rest/api/1.0/projects/$projectKey/repos/$repository/pull-requests/$prId", classOf[PullRequest])
+    )()
+
+  /*
    * Gets the list of commits of a pull request
    *
    */

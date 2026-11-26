@@ -29,6 +29,24 @@ class RepositoryServices(client: StashClient) {
     client.execute(Request(s"$BASE/$projectKey/repos/$repositorySlug", classOf[Repository]))()
   }
 
+  /** Gets the raw content of a file
+    *
+    * @param path
+    *   the file's path in the repository, e.g. `src/Main.scala`
+    * @param at
+    *   the commit, branch or tag to read the file at; the default branch without it
+    */
+  def getRawFile(
+      projectKey: String,
+      repositorySlug: String,
+      path: String,
+      at: Option[String]
+  ): RequestResponse[String] =
+    client.executeText(s"$BASE/$projectKey/repos/$repositorySlug/raw/${RepositoryServices.encodePath(path)}")(
+      params = at.map("at" -> _).toMap,
+      accept = "*/*"
+    )
+
   /** Retrieve a page of repositories based on query parameters that control the search.
     *
     * @param projectName
@@ -151,4 +169,15 @@ class RepositoryServices(client: StashClient) {
     client.postJson(Request(url, classOf[SshKeySimple]), values)
   }
 
+}
+
+object RepositoryServices {
+
+  /** Encodes each segment of a path for a url (spaces as %20), keeping the slashes between them */
+  def encodePath(path: String): String =
+    path
+      .split("/")
+      .filter(_.nonEmpty)
+      .map(segment => java.net.URLEncoder.encode(segment, "UTF-8").replace("+", "%20"))
+      .mkString("/")
 }

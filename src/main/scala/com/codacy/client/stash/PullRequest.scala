@@ -15,7 +15,9 @@ final case class PullRequest(
     sourceBranch: String,
     destRepository: String,
     destBranch: String,
-    author: User
+    author: User,
+    // The newest commit of the source branch
+    latestCommit: Option[String] = None
 ) {
 
   def url(baseUrl: String, projectKey: String) =
@@ -34,6 +36,7 @@ object PullRequest {
       (__ \ "fromRef" \ "id").read[String].map(_.stripPrefix("refs/heads/")) and
       (__ \ "toRef" \ "repository" \ "slug").read[String] and
       (__ \ "toRef" \ "id").read[String].map(_.stripPrefix("refs/heads/")) and
-      (__ \ "author" \ "user").read[User]
+      (__ \ "author" \ "user").read[User] and
+      (__ \ "fromRef" \ "latestCommit").readNullable[String]
   )(PullRequest.apply _)
 }
