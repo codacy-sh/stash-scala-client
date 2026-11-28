@@ -5,6 +5,53 @@ orbs:
 
 cache_prefix: &cache_prefix sbt-cache-18062027
 
+jobs:
+  # Tags over SSH instead of the orb's codacy/tag_version, which pushes over HTTPS with PROVIDER_TOKEN.
+  # Mirrors codacy/chart#844 (release-17.0.0).
+  tag_version_ssh:
+    docker:
+      - image: codacy/ci-do:2.8.0
+    working_directory: ~/workdir/
+    parameters:
+      version:
+        type: string
+        default: ""
+      force:
+        type: boolean
+        default: false
+    steps:
+      - attach_workspace:
+          at: ~/workdir
+      - add_ssh_keys:
+          fingerprints:
+            - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
+      - run:
+          name: Setup SSH
+          command: mkdir -p ~/.ssh && ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+      - run:
+          name: Set Git Config
+          command: |
+            git config --global user.email "circleci@codacy.com"
+            git config --global user.name "CircleCI"
+            git remote set-url origin git@github.com:codacy-sh/stash-scala-client.git
+      - run:
+          name: Fetch Tags
+          command: git fetch --tags
+      - run:
+          name: Tag
+          command: |
+            TAG="<< parameters.version >>"
+            if [ -z "$TAG" ]; then
+              TAG=$(cat .version)
+            fi
+            if [ "<< parameters.force >>" = "true" ]; then
+              git tag -f "$TAG"
+              git push origin -f "refs/tags/$TAG"
+            else
+              git tag "$TAG"
+              git push origin "refs/tags/$TAG"
+            fi
+
 workflows:
   version: 2
   build:
@@ -53,7 +100,7 @@ workflows:
                 command: rm coverage.sbt
           requires:
             - populate_cache
-      - codacy/tag_version:
+      - tag_version_ssh:
           name: tag_version
           context: CodacyAWS
           requires:
